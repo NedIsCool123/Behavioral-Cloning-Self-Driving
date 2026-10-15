@@ -2,9 +2,8 @@
 
 A convolutional neural network that learns to steer a car directly from camera images. The model is trained on recorded human driving, then drives the car autonomously in the Udacity self-driving car simulator through a live Socket.IO connection.
 
-<!-- Add a demo GIF here once recorded, e.g.:
+
 ![Autonomous driving demo](images/demo.gif)
--->
 
 ## How it works
 
