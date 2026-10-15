@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+
+# dataset: ~12k images, download separately (see README)
+track/
