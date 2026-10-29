@@ -1,8 +1,12 @@
 import os
+import ntpath
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.decomposition import PCA
+from sklearn.linear_model import SGDClassifier
+from sklearn.neural_network import MLPRegressor
 import imgaug.augmenters as iaa
 import matplotlib.image as mpimg
 import cv2
@@ -13,7 +17,7 @@ data = pd.read_csv('track/driving_log.csv', names=columns)
 batch_size = 100
 
 def trim(path):
-    trimmed = os.path.basename(path)
+    trimmed = ntpath.basename(path)
     return trimmed
 
 # trim file paths down to just name (C:\Users\Amer\Desktop\new_track\IMG\center_201... --> center_201...)
@@ -46,7 +50,12 @@ def load_img_steering(dataDir, data):
     return image_paths, steerings
 
 image_paths, steerings = load_img_steering('track/IMG', data)
-X_train, X_test, y_train, y_test = train_test_split(image_paths, steerings, test_size=0.2, random_state=11)
+print(f"image path shape: {image_paths.shape}")
+print(f"steerings shape: {steerings.shape}")
+img = mpimg.imread(image_paths[0])
+print(img.shape)
+print(img.size)
+
 
 def zoom(image):
     zoom = iaa.Affine(scale=(1, 1.3))
@@ -96,6 +105,31 @@ def preprocess(image):
 
     return image
 
+preprocessed_img = preprocess(img) # img shape now 66x200x3
+X = np.zeros((image_paths.shape[0], preprocessed_img.size), dtype=np.float32) # .size tells how many numbers are in an array in total ( 66 * 200 * 3 )
+#                 ^rows (# of imgs)     ^columns (dimensions, total amount of numbers in each img array)
+
+for row in range(X.shape[0]):
+    img = mpimg.imread(image_paths[row])
+    img = preprocess(img)
+    img = img.flatten() # 66 * 200 * 3 = 39600
+    for column in range(img.size):
+        X[row][column] = img[column]
+# X is now a numpy array of shape (4720x39600O). 4720 = # of images (rows) 39600 = # of dimensions each image has
+
+
+ann = MLPRegressor(solver='sgd', alpha=1e-5, hidden_layer_sizes=(16), max_iter=400, random_state=33)
+pca = PCA(n_components=None)
+pca = pca.fit(X)
+plt.figure()
+plt.plot(pca.explained_variance_)
+plt.xlim(0, 100)
+plt.xticks(np.arange(0, 101, 5))
+plt.grid(True)
+plt.ylabel("Explained Variance (raw)")
+plt.xlabel("Principle components")
+plt.title("Scree plot for Data")
+plt.show()
 def batch_generator(image_paths, steerings, batchSize, isTraining):
 
     while True:
@@ -119,6 +153,8 @@ def batch_generator(image_paths, steerings, batchSize, isTraining):
                 batch_steerings.append(steerings[random_index])
 
         yield (np.asarray(batch_images), np.asarray(batch_steerings))
+
+# X_train, X_test, y_train, y_test = train_test_split(image_paths, steerings, test_size=0.2, random_state=11)
 
 def nvidia_model():
     model = keras.Sequential() # create model shell
@@ -144,24 +180,29 @@ def nvidia_model():
 
     return model
 
-model = nvidia_model()
-model.compile(optimizer='adam',
-                      loss='mse',
-                      )
-results = model.fit(batch_generator(X_train, y_train, batch_size, 1),
-          steps_per_epoch=len(X_train) // batch_size,
-          epochs=10,
-          validation_data=batch_generator(X_test, y_test, batch_size, False),
-          validation_steps=len(X_test) // batch_size,
-          verbose = 1,
-          )
+# kfold = KFold(n_splits=5, shuffle=True)
+# for train_idx, test_idx in kfold.split(image_paths):
+#     X_train, X_test = image_paths[train_idx], image_paths[test_idx]
+#     y_train, y_test = steerings[train_idx], steerings[test_idx]
+#     model = nvidia_model()
+#     model.compile(optimizer='adam', loss='mse')
+#     results = model.fit(batch_generator(X_train, y_train, batch_size, 1),
+#             steps_per_epoch=len(X_train) // batch_size,
+#             epochs=10,
+#             validation_data=batch_generator(X_test, y_test, batch_size, False),
+#             validation_steps=len(X_test) // batch_size,
+#             verbose = 1,
+#             )
 
-model.save('model.keras')
+# print(results.history)
+    
 
-plt.plot(results.history['loss'])
-plt.plot(results.history['val_loss'])
-plt.legend(['training', 'test'])
-plt.show()
+# model.save('model.keras')
+
+# plt.plot(results.history['loss'])
+# plt.plot(results.history['val_loss'])
+# plt.legend(['training', 'test'])
+# plt.show()
 
 
 # original = mpimg.imread('track/IMG/left_2018_07_16_17_15_53_929.jpg')
