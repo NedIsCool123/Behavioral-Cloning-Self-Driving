@@ -53,7 +53,7 @@ image_paths, steerings = load_img_steering('track/IMG', data)
 print(f"image path shape: {image_paths.shape}")
 print(f"steerings shape: {steerings.shape}")
 img = mpimg.imread(image_paths[0])
-print(img.shape)
+print(img.shape)    
 print(img.size)
 
 
@@ -104,6 +104,15 @@ def preprocess(image):
     image = image / 255 # every pixel value in array between 0 and 1. 255 since they are 8 bit
 
     return image
+k = [10, 20, 50, 75, 100, 125, 150, 200, 250, 300]
+def test_ann(ann, X_train, X_test, y_train, y_test, k):
+    accuries = []
+    for i in k:
+        ann.fit(X_train[:, :i], y_train)
+        acc = ann.score(X_test[:, :i], y_test)
+        accuries.append(acc)
+        print(f"accuracy for k={i}: {acc*100}%")
+        return accuries
 
 preprocessed_img = preprocess(img) # img shape now 66x200x3
 X = np.zeros((image_paths.shape[0], preprocessed_img.size), dtype=np.float32) # .size tells how many numbers are in an array in total ( 66 * 200 * 3 )
@@ -117,19 +126,6 @@ for row in range(X.shape[0]):
         X[row][column] = img[column]
 # X is now a numpy array of shape (4720x39600O). 4720 = # of images (rows) 39600 = # of dimensions each image has
 
-
-ann = MLPRegressor(solver='sgd', alpha=1e-5, hidden_layer_sizes=(16), max_iter=400, random_state=33)
-pca = PCA(n_components=None)
-pca = pca.fit(X)
-plt.figure()
-plt.plot(pca.explained_variance_)
-plt.xlim(0, 100)
-plt.xticks(np.arange(0, 101, 5))
-plt.grid(True)
-plt.ylabel("Explained Variance (raw)")
-plt.xlabel("Principle components")
-plt.title("Scree plot for Data")
-plt.show()
 def batch_generator(image_paths, steerings, batchSize, isTraining):
 
     while True:
@@ -180,21 +176,42 @@ def nvidia_model():
 
     return model
 
-# kfold = KFold(n_splits=5, shuffle=True)
-# for train_idx, test_idx in kfold.split(image_paths):
-#     X_train, X_test = image_paths[train_idx], image_paths[test_idx]
-#     y_train, y_test = steerings[train_idx], steerings[test_idx]
-#     model = nvidia_model()
-#     model.compile(optimizer='adam', loss='mse')
-#     results = model.fit(batch_generator(X_train, y_train, batch_size, 1),
-#             steps_per_epoch=len(X_train) // batch_size,
-#             epochs=10,
-#             validation_data=batch_generator(X_test, y_test, batch_size, False),
-#             validation_steps=len(X_test) // batch_size,
-#             verbose = 1,
-#             )
+kfold = KFold(n_splits=5, shuffle=True)
+losses = []
+all_accs = []
+plt.figure()
+for train_idx, test_idx in kfold.split(image_paths):
+    X_train, X_test = image_paths[train_idx], image_paths[test_idx]
+    Xp_train, Xp_test = X[train_idx], X[test_idx]
+    y_train, y_test = steerings[train_idx], steerings[test_idx]
+    model = nvidia_model()
+    model.compile(optimizer='adam', loss='mse')
+    results = model.fit(batch_generator(X_train, y_train, batch_size, 1),
+            steps_per_epoch=len(X_train) // batch_size,
+            epochs=10,
+            validation_data=batch_generator(X_test, y_test, batch_size, False),
+            validation_steps=len(X_test) // batch_size,
+            verbose = 1,
+            )
+    losses.append(results.history['val_loss'][-1]) # each k-fold does 10 epochs so take the last (best) result of val_loss
+    pca = PCA(n_components=300)
+    pca = pca.fit(Xp_train)
+    Xp_train = pca.transform(Xp_train)
+    Xp_test = pca.transform(Xp_test)
+    
+    
+    ann = MLPRegressor(solver='sgd', alpha=1e-5, hidden_layer_sizes=(16), max_iter=400, random_state=33)
+    accs = test_ann(ann, Xp_train, Xp_test, y_train, y_test, k)
+    all_accs.append(accs)
+    plt.plot(k, accs)
 
-# print(results.history)
+plt.grid(True)
+plt.ylabel("Accuracy")
+plt.xlabel("Principle components")
+plt.title("Accuracy vs. Principle Components")
+plt.show()
+
+print(results.history)
     
 
 # model.save('model.keras')

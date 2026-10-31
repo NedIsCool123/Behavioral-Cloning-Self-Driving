@@ -68,7 +68,11 @@ Based on NVIDIA's [End to End Learning for Self-Driving Cars](https://arxiv.org/
 Initialized model with _holdout_ method for 
 
 1. _Principle Component Analysis:_ Original dimensions of images before preprocessing steps was 153,600. Preprocessing reduces that down to 39,600 by trimming unecessary parts of image. Performed principle component analysis using the sklearn PCA object. Fit the PCA and plotted Scree Plot ( explained variances )
+
+2. 
+
 <img src="images/scree_plot.png" width="500">
+<img src="images/cumulative_variance.png" width="500">
 
 <!-- Add the loss plot here, e.g.:
 ![Training and validation loss](images/loss.png)
