@@ -194,22 +194,47 @@ for train_idx, test_idx in kfold.split(image_paths):
             verbose = 1,
             )
     losses.append(results.history['val_loss'][-1]) # each k-fold does 10 epochs so take the last (best) result of val_loss
-    pca = PCA(n_components=300)
-    pca = pca.fit(Xp_train)
-    Xp_train = pca.transform(Xp_train)
-    Xp_test = pca.transform(Xp_test)
-    
-    
-    ann = MLPRegressor(solver='sgd', alpha=1e-5, hidden_layer_sizes=(16), max_iter=400, random_state=33)
-    accs = test_ann(ann, Xp_train, Xp_test, y_train, y_test, k)
-    all_accs.append(accs)
-    plt.plot(k, accs)
 
-plt.grid(True)
-plt.ylabel("Accuracy")
-plt.xlabel("Principle components")
-plt.title("Accuracy vs. Principle Components")
-plt.show()
+    features = []
+    for i in test_idx: # go through one image at a time
+        # where X is big array that holds every image preprocessed and flattened. shape 4728 x 39600. 4728 images each with 39600 pixel values
+        x = X[i].reshape(1,66,200,3) # wraps into one big outer list
+        for layer in model.layers[:7]: # go through all layers up to 6th one. stops after first Dense(100)
+            x = layer(x) # goes through layers. output is the 100 numbers after dense(100)
+        # x shape is (1,100) 1 row 100 columns/1 row each with 100 things. 
+        features.append(np.array(x[0]))
+        # features is now shape (images, 100) which is about (946, 100) since 4728/5 = 946 with k fold
+
+    pca = PCA(n_components=2)
+    pca = pca.fit(features)
+    features_2d = pca.transform(features) # reduces features to 2 columns
+    # features is now shape (images, 2) which is about (946, 2) since 4728/5 = 946 with k fold
+
+    plt.figure()
+    plt.scatter(features_2d[:, 0], features_2d[:, 1], c = y_test) # x is all rows column index 0 (PC 1) and y is all rows column index 1 (PC 2)
+                                                    # c is for color and represnts each value as a color on a scale. lowest value = purple highest = yellow
+    plt.colorbar(label="Steering angle")
+    plt.title("PCA Projection Colored by Steering Angle")
+    plt.xlabel("Principle Component 1")
+    plt.ylabel("Principle Component 2")
+    plt.show()
+
+#     pca = PCA(n_components=300)
+#     pca = pca.fit(Xp_train)
+#     Xp_train = pca.transform(Xp_train)
+#     Xp_test = pca.transform(Xp_test)
+    
+    
+#     ann = MLPRegressor(solver='sgd', alpha=1e-5, hidden_layer_sizes=(16), max_iter=400, random_state=33)
+#     accs = test_ann(ann, Xp_train, Xp_test, y_train, y_test, k)
+#     all_accs.append(accs)
+#     plt.plot(k, accs)
+
+# plt.grid(True)
+# plt.ylabel("Accuracy")
+# plt.xlabel("Principle components")
+# plt.title("Accuracy vs. Principle Components")
+# plt.show()
 
 print(results.history)
     
