@@ -64,15 +64,18 @@ Based on NVIDIA's [End to End Learning for Self-Driving Cars](https://arxiv.org/
 **Training:** Adam optimizer, mean squared error loss (steering is a regression problem), batch size 100, 10 epochs, 80/20 train/validation split. Batches come from a Python generator, so augmented images are created as needed instead of all being held in memory.
 
 
-**Model Evaluation:**
+## Model Evaluation
 Initialized model with _holdout_ method for 
 
 1. _Principle Component Analysis:_ Original dimensions of images before preprocessing steps was 153,600. Preprocessing reduces that down to 39,600 by trimming unecessary parts of image. Performed principle component analysis using the sklearn PCA object. Fit the PCA and plotted Scree Plot ( explained variances )
-
-2. 
-
 <img src="images/scree_plot.png" width="500">
 <img src="images/cumulative_variance.png" width="500">
+
+2. _CNN Learned Components:_ Plotted PCA and t-SNE graphs of output nodes of first Dense(100) layer in CNN to see how well the model has learned to distinguish between steering angles. Points are plotted on a scatter plot against Principle Components, colored on a colorway to distinguish steering angles in 2 dimensions.
+
+<img src="images/pca_plot.png" width="500">
+
+
 
 <!-- Add the loss plot here, e.g.:
 ![Training and validation loss](images/loss.png)
