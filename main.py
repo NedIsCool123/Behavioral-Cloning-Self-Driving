@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split, KFold
 from sklearn.decomposition import PCA
 from sklearn.linear_model import SGDClassifier
 from sklearn.neural_network import MLPRegressor
+from sklearn.manifold import TSNE
 import imgaug.augmenters as iaa
 import matplotlib.image as mpimg
 import cv2
@@ -205,18 +206,21 @@ for train_idx, test_idx in kfold.split(image_paths):
         features.append(np.array(x[0]))
         # features is now shape (images, 100) which is about (946, 100) since 4728/5 = 946 with k fold
 
+    features = np.array(features)
     pca = PCA(n_components=2)
+    tsne = TSNE(n_components=2, perplexity=15)
     pca = pca.fit(features)
     features_2d = pca.transform(features) # reduces features to 2 columns
+    features_embedded = tsne.fit_transform(features)
     # features is now shape (images, 2) which is about (946, 2) since 4728/5 = 946 with k fold
 
     plt.figure()
-    plt.scatter(features_2d[:, 0], features_2d[:, 1], c = y_test) # x is all rows column index 0 (PC 1) and y is all rows column index 1 (PC 2)
+    plt.scatter(features_embedded[:, 0], features_embedded[:, 1], c = y_test) # x is all rows column index 0 (PC 1) and y is all rows column index 1 (PC 2)
                                                     # c is for color and represnts each value as a color on a scale. lowest value = purple highest = yellow
     plt.colorbar(label="Steering angle")
-    plt.title("PCA Projection Colored by Steering Angle")
-    plt.xlabel("Principle Component 1")
-    plt.ylabel("Principle Component 2")
+    plt.title("TSNE Projection Colored by Steering Angle")
+    plt.xlabel("TSNE 1")
+    plt.ylabel("TSNE 2")
     plt.show()
 
 #     pca = PCA(n_components=300)
