@@ -178,7 +178,8 @@ def nvidia_model():
     return model
 
 kfold = KFold(n_splits=5, shuffle=True)
-losses = []
+val_losses = []
+train_losses = []
 all_accs = []
 plt.figure()
 for train_idx, test_idx in kfold.split(image_paths):
@@ -189,13 +190,14 @@ for train_idx, test_idx in kfold.split(image_paths):
     model.compile(optimizer='adam', loss='mse')
     results = model.fit(batch_generator(X_train, y_train, batch_size, 1),
             steps_per_epoch=len(X_train) // batch_size,
-            epochs=10,
+            epochs=100,
             validation_data=batch_generator(X_test, y_test, batch_size, False),
             validation_steps=len(X_test) // batch_size,
             verbose = 1,
             )
-    losses.append(results.history['val_loss'][-1]) # each k-fold does 10 epochs so take the last (best) result of val_loss
-
+    val_losses.append(results.history['val_loss'][-1]) # each k-fold does 10 epochs so take the last (best) result of val_loss
+    train_losses.append(results.history['loss'][-1])
+'''
     features = []
     for i in test_idx: # go through one image at a time
         # where X is big array that holds every image preprocessed and flattened. shape 4728 x 39600. 4728 images each with 39600 pixel values
@@ -213,15 +215,15 @@ for train_idx, test_idx in kfold.split(image_paths):
     features_2d = pca.transform(features) # reduces features to 2 columns
     features_embedded = tsne.fit_transform(features)
     # features is now shape (images, 2) which is about (946, 2) since 4728/5 = 946 with k fold
-
-    plt.figure()
-    plt.scatter(features_embedded[:, 0], features_embedded[:, 1], c = y_test) # x is all rows column index 0 (PC 1) and y is all rows column index 1 (PC 2)
-                                                    # c is for color and represnts each value as a color on a scale. lowest value = purple highest = yellow
-    plt.colorbar(label="Steering angle")
-    plt.title("TSNE Projection Colored by Steering Angle")
-    plt.xlabel("TSNE 1")
-    plt.ylabel("TSNE 2")
-    plt.show()
+'''
+    # plt.figure()
+    # plt.scatter(features_embedded[:, 0], features_embedded[:, 1], c = y_test) # x is all rows column index 0 (PC 1) and y is all rows column index 1 (PC 2)
+    #                                                 # c is for color and represnts each value as a color on a scale. lowest value = purple highest = yellow
+    # plt.colorbar(label="Steering angle")
+    # plt.title("TSNE Projection Colored by Steering Angle")
+    # plt.xlabel("TSNE 1")
+    # plt.ylabel("TSNE 2")
+    # plt.show()
 
 #     pca = PCA(n_components=300)
 #     pca = pca.fit(Xp_train)
@@ -245,10 +247,13 @@ print(results.history)
 
 # model.save('model.keras')
 
-# plt.plot(results.history['loss'])
-# plt.plot(results.history['val_loss'])
-# plt.legend(['training', 'test'])
-# plt.show()
+plt.plot(val_losses, label="Validation Loss")
+plt.plot(train_losses, label="Training Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.title("CNN Training vs Validation Loss")
+plt.legend()
+plt.show()
 
 
 # original = mpimg.imread('track/IMG/left_2018_07_16_17_15_53_929.jpg')

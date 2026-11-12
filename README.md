@@ -1,9 +1,8 @@
-# Behavioral Cloning: End-to-End Self-Driving in Simulation
+## Self-Driving in Simulation
 
 A convolutional neural network that learns to steer a car directly from camera images. The model is trained on recorded human driving, then drives the car autonomously in the Udacity self-driving car simulator through a live Socket.IO connection.
 
-
-![Autonomous driving demo](images/demo.gif)
+<image src="images/demo.gif">
 
 ## How it works
 
@@ -20,7 +19,7 @@ Each recorded frame has three camera images (center, left, right) and the steeri
 
 **Balancing.** Most driving is straight, so 72% of frames had a steering angle of exactly 0. Left as-is, the model learns to always go straight. Zero-angle frames are randomly capped at 450:
 
-![Steering angle distribution before and after balancing](images/steering_distribution.png)
+<image src="images/steering_distribution.png">
 
 **Using all three cameras.** The left and right images are used as extra training samples, with the steering angle shifted by ±0.15. This teaches the model how to recover when it drifts toward the edge of the road, and triples the training data.
 
@@ -28,7 +27,7 @@ Each recorded frame has three camera images (center, left, right) and the steeri
 
 During training, each image has a 50% chance of each augmentation, applied independently. Every epoch sees freshly randomized images, which helps the model generalize instead of memorizing the track. Validation images are not augmented.
 
-![Augmentation examples](images/augmentation.png)
+<image src="images/augmentation.png">
 
 Flipping mirrors the image left to right, so the steering angle's sign is flipped too.
 
@@ -36,7 +35,7 @@ Flipping mirrors the image left to right, so the steering angle's sign is flippe
 
 Every image, in training and while driving, goes through the same steps:
 
-![Preprocessing steps](images/preprocessing.png)
+<image src="images/preprocessing.png">
 
 1. **Crop** to rows 60–135, removing the sky and the car's hood, which carry no steering information.
 2. **Gaussian blur** (3×3 kernel) to reduce noise.
@@ -74,12 +73,11 @@ Initialized model with _holdout_ method for
 2. _CNN Learned Components:_ Plotted PCA and t-SNE graphs of output nodes of first Dense(100) layer in CNN to see how well the model has learned to distinguish between steering angles. Points are plotted on a scatter plot against Principle Components, colored on a colorway to distinguish steering angles in 2 dimensions.
 
 <img src="images/pca_plot.png" width="500">
+<img src="images/tsne_plot.png" width="500>
 
 
 
-<!-- Add the loss plot here, e.g.:
-![Training and validation loss](images/loss.png)
--->
+<!-- add loss plot -->
 
 ## Running it
 
