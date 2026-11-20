@@ -195,8 +195,12 @@ for train_idx, test_idx in kfold.split(image_paths):
             validation_steps=len(X_test) // batch_size,
             verbose = 1,
             )
-    val_losses.append(results.history['val_loss'][-1]) # each k-fold does 10 epochs so take the last (best) result of val_loss
-    train_losses.append(results.history['loss'][-1])
+    val_losses.append(results.history['val_loss']) # each k-fold does 10 epochs so take the last (best) result of val_loss
+    train_losses.append(results.history['loss'])
+    plt.plot(train_losses, label="Training Loss")
+    plt.plot(val_losses, label="Validation Loss")
+    train_losses = []
+    val_losses = []
 '''
     features = []
     for i in test_idx: # go through one image at a time
@@ -246,9 +250,6 @@ print(results.history)
     
 
 # model.save('model.keras')
-
-plt.plot(val_losses, label="Validation Loss")
-plt.plot(train_losses, label="Training Loss")
 plt.xlabel("Epochs")
 plt.ylabel("Loss")
 plt.title("CNN Training vs Validation Loss")
